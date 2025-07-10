@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>Веб-приложение</title>
+    <link rel="stylesheet" href="/static/reset.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Основная страница</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="header">
+            {% if current_user %}
+                <span style="margin-right: 15px;">Вы вошли как: {{ current_user }}</span>
+            {% endif %}
+            <p><a href="{{ url_for('logout') }}">Выйти</a></p>
+        </div>
+    </div>
+</body>
+</html>

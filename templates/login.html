@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>Вход</title>
+    <link rel="stylesheet" href="/static/reset.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container login-container">
+        <h1>Вход</h1>
+        
+        {% block content %}{% endblock %}
+        <form method="POST">
+            <div>
+                <label class="placeholder">Имя пользователя</label>
+                <input type="text" name="username" required>
+            </div>
+            <div>
+                <label class="placeholder">Пароль</label>
+                <input type="password" name="password" required>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <button type="submit" class="login-btn" id="margin10">Войти</button>
+        </form>
+        <p>Нет Аккаунта? <a href="{{ url_for('register') }}">Регистрация</a></p>
+    </div>
+</body>
+</html>
