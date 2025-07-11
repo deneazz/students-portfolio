@@ -13,7 +13,13 @@ def init_db():
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL
+            password_hash TEXT NOT NULL,
+            first_name TEXT,
+            last_name TEXT,
+            middle_name TEXT,
+            age INTEGER,
+            university TEXT,
+            year INTEGER
         )
     ''')
     conn.commit()
@@ -33,11 +39,51 @@ def get_user(username):
 def verify_password(user, password):
     return user[2] == hashlib.sha256(password.encode()).hexdigest()
 
+def get_user_profile(username):
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute('''
+        SELECT first_name, last_name, middle_name, age, university, year
+        FROM users WHERE username = ?
+    ''', (username,))
+    row = c.fetchone()
+    conn.close()
+    return {key: row[key] for key in row.keys()} if row else None
 
-@app.route('/')
+def update_user_profile(username, data):
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute('''
+        UPDATE users SET
+            first_name = ?, last_name = ?, middle_name = ?,
+            age = ?, university = ?, year = ?
+        WHERE username = ?
+    ''', (
+        data['first_name'], data['last_name'], data['middle_name'],
+        data['age'], data['university'], data['year'],
+        username
+    ))
+    conn.commit()
+    conn.close()
+
+
+
+
+
+
+
+
+
+
+
+# Маршруты
+
+@app.route('/', methods=['GET', 'POST'])
 def index():
     if 'username' not in session:
         return redirect(url_for('login'))
+
     return render_template('index.html', current_user=session['username'])
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -103,6 +149,79 @@ def register():
 def logout():
     session.pop('username', None)
     return redirect(url_for('login'))
+
+@app.route('/edit', methods=['GET', 'POST'])
+def edit():
+    username = session['username']
+    profile = get_user_profile(username)
+
+    if request.method == 'POST':
+        data = {
+            'first_name': request.form['first_name'].strip(),
+            'last_name': request.form['last_name'].strip(),
+            'middle_name': request.form['middle_name'].strip(),
+            'age': request.form['age'].strip(),
+            'university': request.form['university'].strip(),
+            'year': request.form['year'].strip(),
+        }
+        update_user_profile(username, data)
+        flash("Профиль обновлён", "success")
+        profile = get_user_profile(username)
+
+    return render_template('edit.html', current_user=session['username'], profile=profile)
+
+
+@app.route('/update_pass', methods=['POST'])
+def update_pass():
+    username = session['username']
+    current_password = request.form['current_password']
+    new_password = request.form['new_password']
+
+    if len(new_password) < 6:
+        flash("Пароль должен быть не менее 6 символов", "failure")
+        return redirect(url_for('edit'))
+
+    conn = sqlite3.connect(DATABASE)
+    try:
+        c = conn.cursor()
+        c.execute('SELECT password_hash FROM users WHERE username = ?', (username,))
+        user = c.fetchone()
+        
+        if not user or user[0] != hashlib.sha256(current_password.encode()).hexdigest():
+            flash("Неверный текущий пароль", "failure")
+            return redirect(url_for('edit'))
+
+        new_hash = hashlib.sha256(new_password.encode()).hexdigest()
+        c.execute('UPDATE users SET password_hash = ? WHERE username = ?', (new_hash, username))
+        conn.commit()
+        flash("Пароль изменён", "success")
+    except Exception as e:
+        flash(f"Ошибка при изменении пароля: {str(e)}", "failure")
+    finally:
+        conn.close()
+
+    return redirect(url_for('edit'))
+
+
+@app.route('/delete_account', methods=['POST'])
+def delete_account():
+    username = session['username']
+    
+    try:
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        c.execute('DELETE FROM users WHERE username = ?', (username,))
+        conn.commit()
+        
+        flash("Аккаунт успешно удален", "success")
+        session.pop('username', None)
+        return redirect(url_for('login'))
+        
+    except Exception as e:
+        flash(f"Ошибка при удалении аккаунта: {str(e)}", "failure")
+        return redirect(url_for('edit'))
+    finally:
+        conn.close()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

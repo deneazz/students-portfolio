@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>Веб-приложение</title>
+    <link rel="stylesheet" href="/static/reset.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container edit-container">
+        <h1>Изменить профиль</h1>
+        <p><a href="{{ url_for('index') }}">На Главную</a></p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('update_pass') }}">
+            <h3 class="margin10">Изменение пароля</h3>
+            <div>
+                <label>Имя пользователя</label>
+                <input name="username" value="{{ current_user }}" disabled>
+            </div>
+
+            <div>
+                <label>Текущий пароль</label>
+                <input name="current_password" type="password">
+            </div>
+            
+            <div>
+                <label>Новый пароль</label>
+                <input name="new_password" type="password">
+            </div>
+
+            <button type="submit" class="margin10">Изменить пароль</button>
+        </form>
+
+        <form method="POST">
+            <h3 class="margin10">Изменение данных</h3>
+
+            <div>
+                <label>Фамилия</label>
+                <input name="last_name" value="{{ profile.last_name or '' }}">
+            </div>
+            
+            <div>
+                <label>Имя</label>
+                <input name="first_name" value="{{ profile.first_name or '' }}">
+            </div>
+            
+            <div>
+                <label>Отчество</label>
+                <input name="middle_name" value="{{ profile.middle_name or '' }}">
+            </div>
+            
+            <div>
+                <label>Возраст</label>
+                <input name="age" type="number" value="{{ profile.age or '' }}">
+            </div>
+            
+            <div>
+                <label>Учебное заведение</label>
+                <input name="university" value="{{ profile.university or '' }}">
+            </div>
+            
+            <div>
+                <label>Курс</label>
+                <input name="year" value="{{ profile.year or '' }}">
+            </div>
+
+            <button type="submit" class="margin10">Сохранить</button>
+        </form>
+
+        <form method="POST" action="{{ url_for('delete_account') }}" onsubmit="return confirm('Вы уверены, что хотите удалить аккаунт? Это действие нельзя отменить');">
+            <button type="submit" style="background-color: #dc3545;">Удалить аккаунт</button>
+        </form>
+
+    </div>
+</body>
+</html>

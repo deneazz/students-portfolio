@@ -1,4 +1,4 @@
-.login-container{
+.container{
     margin: 100px auto;
     width: 400px;
     padding: 30px;
@@ -11,16 +11,16 @@
     font-size: 12pt;
     color:#000;
 }
-.login-container > form{
+.container > form{
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
-.login-container > form > div{
+.container > form > div{
     display: flex;
     flex-direction: column;
 }
-.login-container input{
+.container input{
     color: #0d0c22;
     height: 40px;
     border: 1px rgba(219, 218, 222, 0.9) solid;
@@ -28,7 +28,10 @@
     padding: 0 10px;
     margin-top: 2px;
 }
-.login-container button{
+.container input:disabled{
+    color: #6c757d;
+}
+.container button{
     background-color: #0d0c22;
     color: #fff;
     height: 40px;
@@ -43,7 +46,8 @@ button:hover{
     filter: brightness(0.8);
 }
 
-#margin10{
+
+.margin10{
     margin-top: 20px;
 }
 
@@ -66,4 +70,12 @@ button:hover{
 .conditions > p{
     font-size: 10pt;
     color: #7b7194;
+}
+
+
+
+
+.index-container{
+    margin: 50px auto;
+    width: 1000px;
 }
