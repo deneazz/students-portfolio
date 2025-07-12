@@ -13,12 +13,12 @@
         {% block content %}{% endblock %}
         <form method="POST">
             <div>
-                <label class="placeholder">Имя пользователя</label>
-                <input type="text" name="username" required>
+                <label for="username1">Имя пользователя</label>
+                <input type="text" id="username1" name="username" autocomplete="username" required>
             </div>
             <div>
-                <label class="placeholder">Пароль</label>
-                <input type="password" name="password" required>
+                <label for="password1">Пароль</label>
+                <input type="password" id="password1" name="password" required>
             </div>
             
             {% with messages = get_flashed_messages(with_categories=true) %}

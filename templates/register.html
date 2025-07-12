@@ -12,16 +12,16 @@
         {% block content %}{% endblock %}
         <form method="POST">
             <div>
-                <label class="placeholder">Имя пользователя</label>
-                <input type="text" name="username" required>
+                <label for="username">Имя пользователя</label>
+                <input type="text" id="username" name="username" autocomplete="username" required>
             </div>
             <div>
-                <label class="placeholder">Пароль</label>
-                <input type="password" name="password" required>
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" required>
             </div>
             <div>
-                <label class="placeholder">Подтвердите пароль</label>
-                <input type="password" name="confirm_password" required>
+                <label for="confirm_password">Подтвердите пароль</label>
+                <input type="password" id="confirm_password" name="confirm_password" required>
             </div>
             <div class="conditions">
                 <p>Имя 4 символа или более</p>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>Добавить проект</title>
+    <link rel="stylesheet" href="/static/reset.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container add-container">
+        <h1>Новый проект</h1>
+        <p><a href="{{ url_for('index') }}">На Главную</a></p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" enctype="multipart/form-data">
+            <div>
+                <label for="title">Название проекта*</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            
+            <div>
+                <label for="description">Описание*</label>
+                <textarea id="description" name="description" maxlength="400" required></textarea>
+            </div>
+
+            <div>
+                <label for="links">Ссылки</label>
+                <textarea id="links" name="links" maxlength="400"></textarea>
+            </div>
+            
+            
+            <div>
+                <label for="category">Категория*</label>
+                <select id="category" name="category" required>
+                    <option value="учебный">Учебный</option>
+                    <option value="личный">Личный</option>
+                    <option value="командный">Командный</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="image">Изображение</label>
+                <input type="file" id="image" name="image" accept="image/*">
+                <div class="conditions">
+                    <p>Допустимые форматы: JPG, PNG, GIF</p>
+                    <p>* - обязательные поля</p>
+                </div>
+            </div>
+            
+            <button type="submit">Добавить проект</button>
+        </form>
+    </div>
+</body>
+</html>

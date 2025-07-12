@@ -20,18 +20,18 @@
         <form method="POST" action="{{ url_for('update_pass') }}">
             <h3 class="margin10">Изменение пароля</h3>
             <div>
-                <label>Имя пользователя</label>
-                <input name="username" value="{{ current_user }}" disabled>
+                <label for="username2">Имя пользователя</label>
+                <input name="username" id="username2" value="{{ current_user }}" disabled>
             </div>
 
             <div>
-                <label>Текущий пароль</label>
-                <input name="current_password" type="password">
+                <label for="password2">Текущий пароль</label>
+                <input name="current_password" id="password2" autocomplete="current-password" type="password">
             </div>
             
             <div>
-                <label>Новый пароль</label>
-                <input name="new_password" type="password">
+                <label for="password3">Новый пароль</label>
+                <input name="new_password" id="password3" autocomplete="new-password" type="password">
             </div>
 
             <button type="submit" class="margin10">Изменить пароль</button>
@@ -41,40 +41,40 @@
             <h3 class="margin10">Изменение данных</h3>
 
             <div>
-                <label>Фамилия</label>
-                <input name="last_name" value="{{ profile.last_name or '' }}">
+                <label for="last_name">Фамилия</label>
+                <input name="last_name" id="last_name" value="{{ profile.last_name or '' }}">
             </div>
             
             <div>
-                <label>Имя</label>
-                <input name="first_name" value="{{ profile.first_name or '' }}">
+                <label for="first_name">Имя</label>
+                <input name="first_name" id="first_name" value="{{ profile.first_name or '' }}">
             </div>
             
             <div>
-                <label>Отчество</label>
-                <input name="middle_name" value="{{ profile.middle_name or '' }}">
+                <label for="middle_name">Отчество</label>
+                <input name="middle_name" id="middle_name" value="{{ profile.middle_name or '' }}">
             </div>
             
             <div>
-                <label>Возраст</label>
-                <input name="age" type="number" value="{{ profile.age or '' }}">
+                <label for="age">Возраст</label>
+                <input name="age" id="age" type="number" value="{{ profile.age or '' }}">
             </div>
             
             <div>
-                <label>Учебное заведение</label>
-                <input name="university" value="{{ profile.university or '' }}">
+                <label for="university">Учебное заведение</label>
+                <input name="university" id="university" value="{{ profile.university or '' }}">
             </div>
             
             <div>
-                <label>Курс</label>
-                <input name="year" value="{{ profile.year or '' }}">
+                <label for="year">Курс</label>
+                <input name="year" id="year" value="{{ profile.year or '' }}">
             </div>
 
             <button type="submit" class="margin10">Сохранить</button>
         </form>
 
         <form method="POST" action="{{ url_for('delete_account') }}" onsubmit="return confirm('Вы уверены, что хотите удалить аккаунт? Это действие нельзя отменить');">
-            <button type="submit" style="background-color: #dc3545;">Удалить аккаунт</button>
+            <button type="submit" class="dlt-btn" style="background-color: #dc3545;">Удалить аккаунт</button>
         </form>
 
     </div>

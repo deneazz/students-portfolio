@@ -1,10 +1,22 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
 import hashlib
+import os
+from werkzeug.utils import secure_filename
+import time
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 DATABASE = 'database.db'
+
+UPLOAD_FOLDER = 'static/img'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def init_db():
     conn = sqlite3.connect(DATABASE)
@@ -20,6 +32,19 @@ def init_db():
             age INTEGER,
             university TEXT,
             year INTEGER
+        )
+    ''')
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        links TEXT,
+        category TEXT NOT NULL CHECK(category IN ('учебный', 'личный', 'командный')),
+        image_path TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
         )
     ''')
     conn.commit()
@@ -83,8 +108,29 @@ def update_user_profile(username, data):
 def index():
     if 'username' not in session:
         return redirect(url_for('login'))
-
-    return render_template('index.html', current_user=session['username'])
+    
+    profile = get_user_profile(session['username'])
+    
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    
+    c.execute('SELECT id FROM users WHERE username = ?', (session['username'],))
+    user_id = c.fetchone()['id']
+    
+    c.execute('''
+        SELECT id, title, description, links, category, image_path, created_at 
+        FROM projects 
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+    ''', (user_id,))
+    projects = c.fetchall()
+    conn.close()
+    
+    return render_template('index.html', 
+                           current_user=session['username'], 
+                           profile=profile, 
+                           projects=projects)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -134,7 +180,7 @@ def register():
             conn.commit()
 
             session['username'] = username
-            flash("Регистрация успешна!", "success")
+            flash(f'Завершите регистрацию, <a href="{url_for("edit")}">заполните</a> данные о себе', 'warning')
             return redirect(url_for('index'))
         except sqlite3.IntegrityError:
             flash("Ошибка: Пользователь уже существует", "failure")
@@ -165,7 +211,7 @@ def edit():
             'year': request.form['year'].strip(),
         }
         update_user_profile(username, data)
-        flash("Профиль обновлён", "success")
+        flash("Профиль обновлен", "success")
         profile = get_user_profile(username)
 
     return render_template('edit.html', current_user=session['username'], profile=profile)
@@ -194,7 +240,7 @@ def update_pass():
         new_hash = hashlib.sha256(new_password.encode()).hexdigest()
         c.execute('UPDATE users SET password_hash = ? WHERE username = ?', (new_hash, username))
         conn.commit()
-        flash("Пароль изменён", "success")
+        flash("Пароль изменен", "success")
     except Exception as e:
         flash(f"Ошибка при изменении пароля: {str(e)}", "failure")
     finally:
@@ -213,7 +259,7 @@ def delete_account():
         c.execute('DELETE FROM users WHERE username = ?', (username,))
         conn.commit()
         
-        flash("Аккаунт успешно удален", "success")
+        flash("Аккаунт удален", "success")
         session.pop('username', None)
         return redirect(url_for('login'))
         
@@ -223,8 +269,126 @@ def delete_account():
     finally:
         conn.close()
 
+
+@app.route('/add_project', methods=['GET', 'POST'])
+def add_project():
+    
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form['description']
+        links = request.form['links']
+        category = request.form['category']
+        
+        image_path = None
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and file.filename and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                unique_filename = f"{session['username']}_{int(time.time())}_{filename}"
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                file.save(file_path)
+                image_path = unique_filename
+        conn = sqlite3.connect(DATABASE)
+
+        try:
+            c = conn.cursor()
+            c.execute('SELECT id FROM users WHERE username = ?', (session['username'],))
+            user_id = c.fetchone()[0]
+            
+            c.execute('''
+                INSERT INTO projects (user_id, title, description, links, category, image_path)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (user_id, title, description, links, category, image_path))
+            conn.commit()
+            flash('Проект добавлен', 'success')
+            return redirect(url_for('index'))
+        except Exception as e:
+            flash(f'Ошибка при добавлении проекта: {str(e)}', 'failure')
+        finally:
+            conn.close()
+    
+    return render_template('add.html')
+
+@app.route('/delete_project/<int:project_id>', methods=['POST'])
+def delete_project(project_id):
+    
+    conn = sqlite3.connect(DATABASE)
+    try:
+        c = conn.cursor()
+        c.execute('''
+            SELECT projects.id, users.username 
+            FROM projects
+            JOIN users ON projects.user_id = users.id
+            WHERE projects.id = ? AND users.username = ?
+        ''', (project_id, session['username']))
+        project = c.fetchone()
+        
+        if not project:
+            flash('Проект не найден или у вас нет прав для его удаления', 'failure')
+            return redirect(url_for('index'))
+        
+        c.execute('DELETE FROM projects WHERE id = ?', (project_id,))
+        conn.commit()
+        flash('Проект удален', 'success')
+    except Exception as e:
+        flash(f'Ошибка при удалении проекта: {str(e)}', 'failure')
+    finally:
+        conn.close()
+    
+    return redirect(url_for('index'))
+
+@app.route('/edit_project/<int:project_id>', methods=['GET', 'POST'])
+def edit_project(project_id):
+
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute('''
+        SELECT projects.*, users.username FROM projects
+        JOIN users ON projects.user_id = users.id
+        WHERE projects.id = ? AND users.username = ?
+    ''', (project_id, session['username']))
+    project = c.fetchone()
+
+    if not project:
+        flash("Проект не найден или доступ запрещен", "failure")
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form['description']
+        links = request.form['links']
+        category = request.form['category']
+
+        image_path = project['image_path']
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and file.filename and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                unique_filename = f"{session['username']}_{int(time.time())}_{filename}"
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                file.save(file_path)
+                image_path = unique_filename
+
+        c.execute('''
+            UPDATE projects
+            SET title = ?, description = ?, links = ?, category = ?, image_path = ?
+            WHERE id = ?
+        ''', (title, description, links, category, image_path, project_id))
+
+        conn.commit()
+        conn.close()
+        flash('Проект обновлён', 'success')
+        return redirect(url_for('index'))
+
+    conn.close()
+    return render_template('edit_project.html', project=project)
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()

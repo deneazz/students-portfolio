@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>Редактировать проект</title>
+    <link rel="stylesheet" href="/static/reset.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container edit-proj-container">
+        <h1>Редактировать проект</h1>
+        <p><a href="{{ url_for('index') }}">На Главную</a></p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" enctype="multipart/form-data">
+            <div>
+                <label for="title">Название проекта</label>
+                <input type="text" id="title" name="title" value="{{ project.title }}" required>
+            </div>
+
+            <div>
+                <label for="description">Описание</label>
+                <textarea id="description" name="description" maxlength="400" required>{{ project.description }}</textarea>
+            </div>
+
+            <div>
+                <label for="links">Ссылки</label>
+                <textarea id="links" name="links" maxlength="400">{{ project.links }}</textarea>
+            </div>
+
+            <div>
+                <label for="category">Категория</label>
+                <select id="category" name="category" required>
+                    <option value="учебный" {% if project.category == 'учебный' %}selected{% endif %}>Учебный</option>
+                    <option value="личный" {% if project.category == 'личный' %}selected{% endif %}>Личный</option>
+                    <option value="командный" {% if project.category == 'командный' %}selected{% endif %}>Командный</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="image">Изображение</label>
+                <input type="file" id="image" name="image" accept="image/*">
+                {% if project.image_path %}
+                    <p style="margin: 10px 0;">Текущее изображение:</p>
+                    <img src="{{ url_for('static', filename='img/' + project.image_path) }}" alt="Текущее изображение" style="max-width: 300px;">
+                {% endif %}
+            </div>
+
+            <button type="submit" class="margin10">Сохранить</button>
+
+        </form>            
+        
+        <form method="POST" action="{{ url_for('delete_project', project_id=project.id) }}" 
+            onsubmit="return confirm('Вы уверены, что хотите удалить этот проект?');">
+            <button type="submit" class="dlt-btn" style="background-color: #dc3545;">Удалить проект</button>
+        </form>
+    </div>
+</body>
+</html>
