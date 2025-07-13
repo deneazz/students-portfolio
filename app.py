@@ -3,10 +3,8 @@ import sqlite3
 import hashlib
 import base64
 import os
-from werkzeug.utils import secure_filename
 import time
-from xhtml2pdf import pisa
-from io import BytesIO
+
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
@@ -349,7 +347,7 @@ def add_project():
         if 'image' in request.files:
             file = request.files['image']
             if file and file.filename and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
+                filename = file.filename
                 unique_filename = f"{session['username']}_{int(time.time())}_{filename}"
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                 file.save(file_path)
@@ -430,7 +428,7 @@ def edit_project(project_id):
         if 'image' in request.files:
             file = request.files['image']
             if file and file.filename and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
+                filename = file.filename
                 unique_filename = f"{session['username']}_{int(time.time())}_{filename}"
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                 file.save(file_path)
@@ -511,4 +509,3 @@ if __name__ == '__main__':
     c = conn.cursor()
     c.execute('SELECT username FROM users')
     conn.close()
-    pisa.showLogging()
