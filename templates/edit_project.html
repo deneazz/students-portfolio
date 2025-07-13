@@ -51,13 +51,13 @@
                 {% endif %}
             </div>
 
-            <button type="submit" class="margin10">Сохранить</button>
+            <button type="submit" class="margin10 def-btn">Сохранить</button>
 
         </form>            
         
         <form method="POST" action="{{ url_for('delete_project', project_id=project.id) }}" 
             onsubmit="return confirm('Вы уверены, что хотите удалить этот проект?');">
-            <button type="submit" class="dlt-btn" style="background-color: #dc3545;">Удалить проект</button>
+            <button type="submit" class="def-btn dlt-btn">Удалить проект</button>
         </form>
     </div>
 </body>

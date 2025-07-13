@@ -1,9 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response
 import sqlite3
 import hashlib
+import base64
 import os
 from werkzeug.utils import secure_filename
 import time
+from xhtml2pdf import pisa
+from io import BytesIO
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
@@ -92,6 +95,55 @@ def update_user_profile(username, data):
     conn.commit()
     conn.close()
 
+def get_user_projects(username):
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    
+    try:
+        c.execute('SELECT id FROM users WHERE username = ?', (username,))
+        user = c.fetchone()
+        
+        user_id = user['id']
+        
+        c.execute('''
+            SELECT id, title, description, links, category, image_path, created_at 
+            FROM projects 
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+        ''', (user_id,))
+        
+        return c.fetchall()
+    
+    except Exception as e:
+        app.logger.error(f'Ошибка при получении проектов пользователя {username}: {str(e)}')
+        return []
+    
+    finally:
+        conn.close()
+
+def image_to_base64(image_path):
+    if not image_path or not os.path.exists(os.path.join(UPLOAD_FOLDER, image_path)):
+        return None
+    
+    try:
+        with open(os.path.join(UPLOAD_FOLDER, image_path), 'rb') as img_file:
+            img_data = img_file.read()
+            img_base64 = base64.b64encode(img_data).decode('utf-8')
+            
+            ext = image_path.split('.')[-1].lower()
+            mime_types = {
+                'png': 'image/png',
+                'jpg': 'image/jpeg',
+                'jpeg': 'image/jpeg',
+                'gif': 'image/gif'
+            }
+            mime_type = mime_types.get(ext, 'image/jpeg')
+            
+            return f"data:{mime_type};base64,{img_base64}"
+    except Exception as e:
+        app.logger.error(f'Ошибка при конвертации изображения {image_path} в base64: {str(e)}')
+        return None
 
 
 
@@ -201,15 +253,29 @@ def edit():
     username = session['username']
     profile = get_user_profile(username)
 
+  
+
     if request.method == 'POST':
         data = {
             'first_name': request.form['first_name'].strip(),
             'last_name': request.form['last_name'].strip(),
             'middle_name': request.form['middle_name'].strip(),
-            'age': request.form['age'].strip(),
+            'age': request.form['age'],
             'university': request.form['university'].strip(),
-            'year': request.form['year'].strip(),
+            'year': request.form['year'],
         }
+
+        if data['year'] != '':
+            if int(data['year']) <= 0 or int(data['year']) > 100:
+                flash("Неверно указан курс", "failure")
+                return redirect(url_for('edit')) 
+        if data['age'] != '':
+            if (int(data['age']) <= 0 or int(data['age']) > 100):
+                flash("Неверно указан возраст", "failure")
+                return redirect(url_for('edit')) 
+
+
+
         update_user_profile(username, data)
         flash("Профиль обновлен", "success")
         profile = get_user_profile(username)
@@ -385,6 +451,57 @@ def edit_project(project_id):
     return render_template('edit_project.html', project=project)
 
 
+from weasyprint import HTML, CSS
+from weasyprint.text.fonts import FontConfiguration
+
+@app.route('/export_pdf')
+def export_pdf():
+    username = session['username']
+    
+    try:
+        profile = get_user_profile(username)
+        projects = get_user_projects(username)
+        
+        projects_with_base64 = []
+        for project in projects:
+            project_dict = dict(project)
+            if project['image_path']:
+                base64_image = image_to_base64(project['image_path'])
+                project_dict['image_base64'] = base64_image
+            else:
+                project_dict['image_base64'] = None
+            projects_with_base64.append(project_dict)
+        
+        html_content = render_template('pdf_template.html', profile=profile, projects=projects_with_base64)
+        
+        css_content = """
+        @font-face {
+            font-family: 'Inter_18pt-Regular';
+            src: url('static/fonts/Inter_18pt-Regular.ttf');
+        }
+        body { 
+            font-family: 'Inter_18pt-Regular', Arial, sans-serif; 
+        }
+        """
+        
+        font_config = FontConfiguration()
+        html_doc = HTML(string=html_content)
+        css_doc = CSS(string=css_content, font_config=font_config)
+        
+        pdf_bytes = html_doc.write_pdf(stylesheets=[css_doc], font_config=font_config)
+        
+        response = make_response(pdf_bytes)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'inline; filename="Portfolio_{username}.pdf"'
+        
+        return response
+        
+    except Exception as e:
+        app.logger.error(f'WeasyPrint error: {str(e)}')
+        flash(f'Ошибка WeasyPrint: {str(e)}', 'failure')
+        return redirect(url_for('index'))
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
 
@@ -394,3 +511,4 @@ if __name__ == '__main__':
     c = conn.cursor()
     c.execute('SELECT username FROM users')
     conn.close()
+    pisa.showLogging()
