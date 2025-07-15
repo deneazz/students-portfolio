@@ -21,9 +21,14 @@
                     <p><a href="{{ url_for('logout') }}">Выйти</a></p>
                     <p><a href="{{ url_for('edit') }}">Изменить профиль</a></p>                    
                 </div>
-
-            </div>            
+            </div>  
         </div>
+
+        <div class="biography">
+            <p>{{ profile.last_name + " " + profile.first_name + " " + profile.middle_name }}</p>
+            <p>{{ profile.description }}</p>
+        </div>   
+
         
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}

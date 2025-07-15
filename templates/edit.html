@@ -54,6 +54,11 @@
                 <label for="middle_name">Отчество</label>
                 <input name="middle_name" id="middle_name" value="{{ profile.middle_name or '' }}">
             </div>
+
+            <div>
+                <label for="description">О себе</label>
+                <textarea name="description" id="description" maxlength="400">{{ profile.description or '' }}</textarea>
+            </div>
             
             <div>
                 <label for="age">Возраст</label>

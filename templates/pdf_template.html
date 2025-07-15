@@ -63,6 +63,9 @@
         .margin10{
             margin-top: 10px;
         }
+        .margin1010{
+            margin: 10px 0;
+        }
         h3{
             font-size: 15pt;
         }
@@ -105,6 +108,11 @@
             </tr>
 
             <tr>
+                <td>Описание</td>
+                <td>{{ profile.description or "–" }}</td>
+            </tr>
+
+            <tr>
                 <td>Возраст</td>
                 <td>{{ profile.age or '–'}}</td>
             </tr>
@@ -140,7 +148,7 @@
                             <p><span>Ссылки:</span> {{ project.links }}</p>
                         {% endif %}
                         {% if project.image_path %}
-                            <p><img src="{{ project.image_base64 }}" alt="{{ project.title }}" class="margin10"></p>
+                            <p><img src="{{ project.image_base64 }}" alt="{{ project.title }}" class="margin1010"></p>
                         {% endif %}
                         <p><span>Дата создания:</span> {{ project.created_at }}</p>
                     </div>

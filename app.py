@@ -30,6 +30,7 @@ def init_db():
             first_name TEXT,
             last_name TEXT,
             middle_name TEXT,
+            description TEXT,
             age INTEGER,
             university TEXT,
             year INTEGER
@@ -70,7 +71,7 @@ def get_user_profile(username):
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute('''
-        SELECT first_name, last_name, middle_name, age, university, year
+        SELECT first_name, last_name, middle_name, description, age, university, year
         FROM users WHERE username = ?
     ''', (username,))
     row = c.fetchone()
@@ -82,12 +83,12 @@ def update_user_profile(username, data):
     c = conn.cursor()
     c.execute('''
         UPDATE users SET
-            first_name = ?, last_name = ?, middle_name = ?,
+            first_name = ?, last_name = ?, middle_name = ?, description = ?,
             age = ?, university = ?, year = ?
         WHERE username = ?
     ''', (
         data['first_name'], data['last_name'], data['middle_name'],
-        data['age'], data['university'], data['year'],
+        data['description'], data['age'], data['university'], data['year'],
         username
     ))
     conn.commit()
@@ -177,10 +178,7 @@ def index():
     projects = c.fetchall()
     conn.close()
     
-    return render_template('index.html', 
-                           current_user=session['username'], 
-                           profile=profile, 
-                           projects=projects)
+    return render_template('index.html', current_user=session['username'], profile=profile, projects=projects)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -251,13 +249,12 @@ def edit():
     username = session['username']
     profile = get_user_profile(username)
 
-  
-
     if request.method == 'POST':
         data = {
             'first_name': request.form['first_name'].strip(),
             'last_name': request.form['last_name'].strip(),
             'middle_name': request.form['middle_name'].strip(),
+            'description': request.form['description'].strip(),
             'age': request.form['age'],
             'university': request.form['university'].strip(),
             'year': request.form['year'],
@@ -275,8 +272,8 @@ def edit():
 
 
         update_user_profile(username, data)
-        flash("Профиль обновлен", "success")
         profile = get_user_profile(username)
+        flash("Профиль обновлен", "success")
 
     return render_template('edit.html', current_user=session['username'], profile=profile)
 

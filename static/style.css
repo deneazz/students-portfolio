@@ -52,7 +52,7 @@
     padding-top: 7px;
     height: 80px;
     resize: vertical;
-    max-height: 150px;
+    max-height: 200px;
 }
 .container input:disabled{
     color: #6c757d;
