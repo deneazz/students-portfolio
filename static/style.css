@@ -15,6 +15,7 @@
 .options{
     display: flex;
     justify-content: end;
+    align-items: center;
     gap: 10px;
 }
 .container{
@@ -122,9 +123,10 @@ input[type=file]::file-selector-button:hover {
     color: #7b7194;
 }
 
-.index-container{
+.index-container, .main-container{
     margin: 50px auto;
     width: 1000px;
+    min-height: 500px;
 }
 
 .add-container, .edit-proj-container{

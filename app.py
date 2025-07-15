@@ -63,6 +63,15 @@ def get_user(username):
     conn.close()
     return user
 
+def get_all_users():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute('SELECT username FROM users ORDER BY username')
+    users = c.fetchall()
+    conn.close()
+    return users
+
 def verify_password(user, password):
     return user[2] == hashlib.sha256(password.encode()).hexdigest()
 
@@ -157,28 +166,35 @@ def image_to_base64(image_path):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    if 'username' not in session:
-        return redirect(url_for('login'))
+    if 'username' in session:
+        username = session['username']
+        profile = get_user_profile(username)
+        projects = get_user_projects(username)
+        return render_template('index.html', 
+                               current_user=username, 
+                               profile=profile, 
+                               projects=projects, 
+                               is_public=False)
+    else:
+        users = get_all_users()
+        return render_template('public_users.html', users=users)
     
-    profile = get_user_profile(session['username'])
-    
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
-    
-    c.execute('SELECT id FROM users WHERE username = ?', (session['username'],))
-    user_id = c.fetchone()['id']
-    
-    c.execute('''
-        SELECT id, title, description, links, category, image_path, created_at 
-        FROM projects 
-        WHERE user_id = ?
-        ORDER BY created_at DESC
-    ''', (user_id,))
-    projects = c.fetchall()
-    conn.close()
-    
-    return render_template('index.html', current_user=session['username'], profile=profile, projects=projects)
+@app.route('/user/<username>')
+def view_profile(username):
+    profile = get_user_profile(username)
+    if not profile:
+        flash('Пользователь не найден', 'failure')
+        return redirect(url_for('index'))
+
+    if 'username' in session and session['username'] == username:
+        return redirect(url_for('index'))
+
+    projects = get_user_projects(username)
+    return render_template('index.html', 
+                           current_user=username, 
+                           profile=profile, 
+                           projects=projects, 
+                           is_public=True)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -439,7 +455,7 @@ def edit_project(project_id):
 
         conn.commit()
         conn.close()
-        flash('Проект обновлён', 'success')
+        flash('Проект обновлен', 'success')
         return redirect(url_for('index'))
 
     conn.close()

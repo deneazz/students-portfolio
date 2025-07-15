@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>Портфолио пользователей</title>
+    <link rel="stylesheet" href="/static/reset.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <meta charset="utf-8">
+</head>
+<body>
+    <div class="container main-container">
+        <div class="header">
+            <h1>Все портфолио</h1>
+            <div class="options">
+                <p><a href="{{ url_for('login') }}">Войти</a></p>
+            </div>
+        </div>
+
+        <p>Вы не авторизованы. Вы можете посмотреть публичные страницы пользователей ниже</p>
+
+        {% if users %}
+            <ul>
+                {% for user in users %}
+                    <li class="margin10">
+                        <a href="{{ url_for('view_profile', username=user.username) }}">{{ user.username }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Нет ни одного пользователя</p>
+        {% endif %}
+    </div>
+</body>
+</html>
