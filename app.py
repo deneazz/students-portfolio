@@ -3,8 +3,6 @@ import sqlite3
 import hashlib
 import base64
 import os
-import time
-
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
@@ -37,23 +35,22 @@ def init_db():
         )
     ''')
     c.execute('''
-    CREATE TABLE IF NOT EXISTS projects (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        title TEXT NOT NULL,
-        description TEXT NOT NULL,
-        links TEXT,
-        category TEXT NOT NULL CHECK(category IN ('учебный', 'личный', 'командный')),
-        image_path TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        CREATE TABLE IF NOT EXISTS projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            links TEXT,
+            category TEXT NOT NULL CHECK(category IN ('учебный', 'личный', 'командный')),
+            image_path TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
         )
     ''')
     conn.commit()
     conn.close()
 
 init_db()
-
 
 def get_user(username):
     conn = sqlite3.connect(DATABASE)
@@ -153,17 +150,6 @@ def image_to_base64(image_path):
         app.logger.error(f'Ошибка при конвертации изображения {image_path} в base64: {str(e)}')
         return None
 
-
-
-
-
-
-
-
-
-
-# Маршруты
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if 'username' in session:
@@ -215,7 +201,6 @@ def register():
         password = request.form['password']
         confirm_password = request.form['confirm_password']
 
-        # Валидация
         errors = []
         if len(username) < 4:
             errors.append("Имя пользователя должно быть не менее 4 символов")
@@ -231,7 +216,6 @@ def register():
                 flash(error, "failure")
             return redirect(url_for('register'))
 
-        # Если прошли
         try:
             password_hash = hashlib.sha256(password.encode()).hexdigest()
             
@@ -293,7 +277,6 @@ def edit():
 
     return render_template('edit.html', current_user=session['username'], profile=profile)
 
-
 @app.route('/update_pass', methods=['POST'])
 def update_pass():
     username = session['username']
@@ -325,7 +308,6 @@ def update_pass():
 
     return redirect(url_for('edit'))
 
-
 @app.route('/delete_account', methods=['POST'])
 def delete_account():
     username = session['username']
@@ -346,7 +328,6 @@ def delete_account():
     finally:
         conn.close()
 
-
 @app.route('/add_project', methods=['GET', 'POST'])
 def add_project():
     
@@ -361,7 +342,7 @@ def add_project():
             file = request.files['image']
             if file and file.filename and allowed_file(file.filename):
                 filename = file.filename
-                unique_filename = f"{session['username']}_{int(time.time())}_{filename}"
+                unique_filename = f"{session['username']}_{filename}"
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                 file.save(file_path)
                 image_path = unique_filename
@@ -442,7 +423,7 @@ def edit_project(project_id):
             file = request.files['image']
             if file and file.filename and allowed_file(file.filename):
                 filename = file.filename
-                unique_filename = f"{session['username']}_{int(time.time())}_{filename}"
+                unique_filename = f"{session['username']}_{filename}"
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                 file.save(file_path)
                 image_path = unique_filename
@@ -460,7 +441,6 @@ def edit_project(project_id):
 
     conn.close()
     return render_template('edit_project.html', project=project)
-
 
 from weasyprint import HTML, CSS
 from weasyprint.text.fonts import FontConfiguration
@@ -511,7 +491,6 @@ def export_pdf():
         app.logger.error(f'WeasyPrint error: {str(e)}')
         flash(f'Ошибка WeasyPrint: {str(e)}', 'failure')
         return redirect(url_for('index'))
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
